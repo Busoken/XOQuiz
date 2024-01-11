@@ -40,24 +40,55 @@ class GameController {
     currentPlayer; // Default starting player
     winner;
   }
-  Future<void> saveGame() async {
-    final file = await _localFile;
+  Future<void> saveGame({bool textfile = false}) async {
+    final file = await _localFile(textfile);
     Map<String, dynamic> gameState = {
       'board': board.board.map((row) => row.map((e) => e.index).toList()).toList(),
       'currentPlayer': currentPlayer.index,
       'winner': winner.index
     };
-    String jsonString = jsonEncode(gameState);
-    await file.writeAsString(jsonString);
+
+    if (textfile) {
+      // Save in a custom text format
+      String textData = gameStateToString(gameState);
+      await file.writeAsString(textData);
+    } else {
+      // Save in JSON format
+      String jsonString = jsonEncode(gameState);
+      await file.writeAsString(jsonString);
+    }
   }
 
-  Future<void> loadGame() async {
-    try {
-      final file = await _localFile;
-      if (await file.exists()) {
-        String jsonString = await file.readAsString();
-        Map<String, dynamic> gameState = jsonDecode(jsonString);
+  // Custom method to convert gameState to a String for text file format
+String gameStateToString(Map<String, dynamic> gameState) {
+  // Convert the gameState object to a string representation
+  // Example format: "0,1,2\n1,1,0\n0,2,1\n[currentPlayerIndex]\n[winnerIndex]"
 
+  var boardRows = gameState['board']
+      .map((row) => row.map((e) => e.toString()).join(','))
+      .join('\n');
+
+  return '$boardRows\n${gameState['currentPlayer']}\n${gameState['winner']}';
+}
+
+
+  Future<void> loadGame({bool textfile = false}) async {
+    try {
+      final file = await _localFile(textfile);
+      if (await file.exists()) {
+        Map<String, dynamic> gameState;
+
+        if (textfile) {
+          // Load from a custom text format
+          String textData = await file.readAsString();
+          gameState = stringToGameState(textData);
+        } else {
+          // Load from JSON format
+          String jsonString = await file.readAsString();
+          gameState = jsonDecode(jsonString);
+        }
+
+        // Updating the game state from the loaded data
         board.board = List.generate(
           3,
           (i) => List.generate(
@@ -75,10 +106,39 @@ class GameController {
     }
   }
 
+  // Custom method to convert a String from a text file to gameState
+Map<String, dynamic> stringToGameState(String textData) {
+  // Assuming format: "0,1,2\n1,1,0\n0,2,1\n[currentPlayerIndex]\n[winnerIndex]"
+  var lines = textData.split('\n');
+
+  if (lines.length < 5) {
+    // Handle error or return a default state if the format is not as expected
+    // You can throw an exception or return a default game state
+  }
+
+  var boardData = List.generate(
+    3,
+    (i) => lines[i]
+            .split(',')
+            .map((e) => int.tryParse(e) ?? 0)
+            .toList(),
+    growable: false);
+
+  var currentPlayer = int.tryParse(lines[3]) ?? 0;
+  var winner = int.tryParse(lines[4]) ?? 0;
+
+  return {
+    'board': boardData,
+    'currentPlayer': currentPlayer,
+    'winner': winner,
+  };
+}
+
+
   // Helper function to get local file for storing game data
-  Future<File> get _localFile async {
+  Future<File> _localFile(bool textfile) async {
     final directory = Directory.current; // Getting the current directory
-    return File('${directory.path}/gamedata.json'); // Adjusting the path to gamedata.json
+    return File('${directory.path}/gamedata.${textfile ? 'txt' : 'json'}'); // Choose file extension based on 'textfile' boolean
   }
 
   void randomizeStartingPlayer() {
@@ -89,7 +149,7 @@ class GameController {
   void playTurn(int row, int col) {
     if (board.getPlayer(row, col) == Player.None && winner == Player.None) {
       board.setPlayer(row, col, currentPlayer);
-      saveGame();
+      saveGame(textfile: true);
 
       if (checkWinner(row, col)) {
         winner = currentPlayer;
