@@ -149,6 +149,7 @@ Map<String, dynamic> stringToGameState(String textData) {
   void playTurn(int row, int col) {
     if (board.getPlayer(row, col) == Player.None && winner == Player.None) {
       board.setPlayer(row, col, currentPlayer);
+      isbesides(row,col);
       saveGame(textfile: true);
 
       if (checkWinner(row, col)) {
@@ -158,7 +159,24 @@ Map<String, dynamic> stringToGameState(String textData) {
       }
     }
   }
-
+  void isbesides(int row, int col){
+    if(row+1<=2 && board.board[row][col] == currentPlayer && board.board[row+1][col] == currentPlayer){
+      board.board[row][col]=Player.None;
+      board.board[row+1][col]=Player.None;
+    }
+    if(row-1>=0 && board.board[row][col] == currentPlayer && board.board[row-1][col] == currentPlayer){
+      board.board[row][col]=Player.None;
+      board.board[row-1][col]=Player.None;
+    }
+    if(col+1<=2 && board.board[row][col] == currentPlayer && board.board[row][col+1] == currentPlayer){
+      board.board[row][col]=Player.None;
+      board.board[row][col+1]=Player.None;
+    }
+    if(col-1>=0 && board.board[row][col] == currentPlayer && board.board[row][col-1] == currentPlayer){
+      board.board[row][col]=Player.None;
+      board.board[row][col-1]=Player.None;
+    }
+  }
 
   bool checkWinner(int row, int col) {
     // Check row
