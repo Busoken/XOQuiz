@@ -2,6 +2,9 @@ import 'dart:io';
 import 'dart:convert'; // For converting data to JSON format
 import 'dart:math';
 
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+
 enum Player { X, O, None }
 
 class GameBoard {
@@ -32,6 +35,8 @@ class GameBoard {
 
 class GameController {
   late GameBoard board;
+  List<int> CurrentMove = [0,0];
+  List<int> PreviousMove = [0,0];
   Player currentPlayer = Player.X;
   Player winner = Player.None;
 
@@ -151,6 +156,8 @@ Map<String, dynamic> stringToGameState(String textData) {
       board.setPlayer(row, col, currentPlayer);
       isbesides(row,col);
       saveGame(textfile: true);
+      CurrentMove[0] = row;
+      CurrentMove[1] = col;
 
       if (checkWinner(row, col)) {
         winner = currentPlayer;
@@ -176,6 +183,16 @@ Map<String, dynamic> stringToGameState(String textData) {
       board.board[row][col]=Player.None;
       board.board[row][col-1]=Player.None;
     }
+  }
+  void Undomove(){ 
+    board.board[CurrentMove[0]][CurrentMove[1]] = Player.None;
+    PreviousMove = CurrentMove;
+    currentPlayer = currentPlayer == Player.X ? Player.O : Player.X;
+  }
+  void Redomove(){
+    board.board[PreviousMove[0]][PreviousMove[1]] = currentPlayer;
+    CurrentMove = PreviousMove;
+    currentPlayer = currentPlayer == Player.X ? Player.O : Player.X;
   }
 
   bool checkWinner(int row, int col) {

@@ -71,7 +71,7 @@ class _GraphicModeTicTacToeState extends State<GraphicModeTicTacToe> {
       floatingActionButton: FloatingActionButton( // Reset game button
         onPressed: () {
           setState(() {
-            controller.resetGame();
+            controller.Undomove();
           });
         },
         child: Icon(Icons.refresh),
